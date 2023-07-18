@@ -1,5 +1,12 @@
 .nfs*
 
+#data
+data/
+
+#weights
+weights/
+
+
 # compilation and distribution
 __pycache__
 _ext
