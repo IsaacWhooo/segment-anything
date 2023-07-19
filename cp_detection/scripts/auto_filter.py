@@ -1,5 +1,6 @@
 import os
 import sys
+from tqdm import tqdm
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
@@ -10,18 +11,20 @@ import glob
 import json
 
 # Specify the path of the input folder
-input_folder = "../input_json"
+input_folder = "../data/input_json"
 
 # Specify the path of the output folder
-output_folder = "../filtered_json"
+output_folder = "../data/filtered_json"
 
 # Get a list of all JSON files in the input folder
 json_files = glob.glob(os.path.join(input_folder, "*.json"))
 
-print(f"Find {len(json_files)} files.")
+total_file_number = len(json_files)
+print(f"Find {total_file_number} files.")
 
-def auto_filter(json_input: str, min_circular_ratio: float = 0.92, max_circular_ratio: float = 1.05,
-                min_semi_ratio: float = 0.45, max_semi_ratio: float = 0.55, min_size_ratio: float = 0.01) -> str:
+def auto_filter(json_input: str, min_circular_ratio: float = 0.9, max_circular_ratio: float = 1.05,
+                min_semi_ratio: float = 0.45, max_semi_ratio: float = 0.55, min_size_ratio: float = 0.005,
+                second_min_circular_ratio: float = 0.7) -> str:
     """
     Apply an automated filter to the annotations in a JSON string.
 
@@ -50,7 +53,7 @@ def auto_filter(json_input: str, min_circular_ratio: float = 0.92, max_circular_
     candidates = [[], []]
 
     # For each array
-    for array in arrays:
+    for array in tqdm(arrays, total = len(arrays), file = sys.stdout):
         # Perform watershed segmentation
         labels = watershed(array)
 
@@ -68,37 +71,44 @@ def auto_filter(json_input: str, min_circular_ratio: float = 0.92, max_circular_
         # Add the semi-circle regions to the list of candidates
         candidates[1].extend(semi_circle_regions)
 
-    # Merge and segment the semi-circle candidates
-    masks = merge_and_segment(candidates[1], min_circular_ratio, max_circular_ratio)
+    if candidates[1]:
+        # Merge and segment the semi-circle candidates
+        masks = merge_and_segment(candidates[1], second_min_circular_ratio, max_circular_ratio)
 
-    # Add the merged masks to the list of circle candidates
-    candidates[0].extend(masks)
+        # Add the merged masks to the list of circle candidates
+        candidates[0].extend(masks)
 
     # Remove duplicate candidates
-    unique_masks = remove_duplicates(candidates[0])
+    if candidates[0]:
+        unique_masks = remove_duplicates(candidates[0])
+        # Convert the list of unique masks back to JSON format
+        return list2json(unique_masks)
+    else:
+        return None
 
-    # Convert the list of unique masks back to JSON format
-    json_output = list2json(unique_masks)
 
-    return json_output
 
+
+counter = 0
 
 # Process each JSON file
-for i, json_file_path in enumerate(json_files):
-    print(f"Processing file: {json_file_path}, {i+1} of {len(json_files)}.")  # Print the path of the current file
+for i, json_file_path in tqdm(enumerate(json_files), total=len(json_files), file=sys.stdout):
+    # print(f"Processing file: {json_file_path}, {i+1} of {len(json_files)}.")  # Print the path of the current file
 
     # Open the JSON file and read the data
     with open(json_file_path, 'r') as json_file:
         json_data = json_file.read()
 
     # Apply the automated filter to the JSON data
-    print("Applying filter...")  # Print a message before the filter is applied
+    # print("Applying filter...")  # Print a message before the filter is applied
     filtered_data = auto_filter(json_data)
-    print("Filter applied.")  # Print a message after the filter is applied
+    # print("Filter applied.")  # Print a message after the filter is applied
+    if filtered_data:
+        save_filtered_json(filtered_data, json_file_path, output_folder)
+        counter += 1
+        print("Filtered data saved.")  # Print a message after the data is saved
+    else:
+        print("No mask found in this file.")
 
-    # Save the filtered JSON data to a new file in the output folder
-    print("Saving filtered data...")  # Print a message before the data is saved
-    save_filtered_json(filtered_data, json_file_path, output_folder)
-    print("Filtered data saved.")  # Print a message after the data is saved
+print(f"Processed {total_file_number}. Saved {counter} files.")  # Print a message after all files have been processed
 
-print("All files processed.")  # Print a message after all files have been processed

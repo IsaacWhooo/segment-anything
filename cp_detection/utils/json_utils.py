@@ -3,6 +3,8 @@ import numpy as np
 import json
 import os
 import base64
+from label_studio_converter import brush
+
 def json2list(json_data):
     ndarray_list = []
     for item in json_data:
@@ -28,8 +30,8 @@ def list2json(mask_list):
         JSON formatted string of binary masks
     """
 
-    # Initialize an empty dictionary to store the masks
-    mask_dict = {}
+    # Initialize an empty list to store the masks
+    mask_list_json = []
 
     # Loop through each mask in the list
     for i, binary_mask in enumerate(mask_list):
@@ -37,14 +39,22 @@ def list2json(mask_list):
         rle = mask.encode(np.asfortranarray(binary_mask.astype(np.uint8)))
 
         # Convert the 'counts' field to a string
-        rle['counts'] = base64.b64encode(rle['counts']).decode()
+        rle['counts'] = rle['counts'].decode('utf-8')
 
-        mask_dict[str(i)] = rle
+        # Store the size and counts in a dictionary
+        segmentation_dict = {
+            'size': list(rle['size']),
+            'counts': rle['counts']
+        }
 
-    # Convert the dictionary to a JSON formatted string
-    json_masks = json.dumps(mask_dict)
+        # Append the segmentation dictionary to the mask list
+        mask_list_json.append({'segmentation': segmentation_dict})
+
+    # Convert the list of dictionaries to a JSON formatted string
+    json_masks = json.dumps(mask_list_json)
 
     return json_masks
+
 
 def save_filtered_json(json_data, original_file_path, output_folder):
     """
@@ -72,4 +82,58 @@ def save_filtered_json(json_data, original_file_path, output_folder):
         json_file.write(json_data)
 
 
+def masks2rle(masks):
+    """
+    Convert a list of masks into a list of RLE representations.
 
+    Args:
+    masks: list of np.array
+        A list of masks.
+
+    Returns:
+    rles: list of dict
+        A list of RLE representations of the masks.
+    """
+    rles = []
+    for mask in masks:
+        rle = brush.mask2rle(mask)
+        rles.append(rle)
+    return rles
+
+def save_label_studio_task(rles, image_path, output_folder):
+    """
+    Save a task that can be imported into Label Studio.
+
+    Args:
+    rles: list of dict
+        A list of RLE representations of the masks.
+    image_path: str
+        The path to the image file.
+    output_folder: str
+        The folder where the task will be saved.
+    """
+    for i, rle in enumerate(rles):
+        task = {
+            'data': {'image': image_path},
+            'predictions': [
+                {
+                    'result': [
+                        {
+                            'from_name': 'tag',
+                            'to_name': 'image',
+                            'type': 'brushlabels',
+                            'value': {
+                                'brushlabels': ['cp'],
+                                'image_rotation': 0,
+                                'rle': rle
+                            }
+                        }
+                    ],
+                    'score': None,
+                    'model_version': None
+                }
+            ]
+        }
+        task_file_name = os.path.join(output_folder, f'ls_{os.path.splitext(os.path.basename(image_path))[0]}_{i}.json')
+        with open(task_file_name, 'w') as f:
+            json.dump(task, f)

@@ -1,7 +1,12 @@
 .nfs*
 
+
+#original images
+
+cp_detection/original_images
+
 #data
-data/
+cp_detection/data
 
 #weights
 weights/

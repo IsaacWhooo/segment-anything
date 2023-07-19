@@ -165,14 +165,13 @@ def detect_circles_and_semi_circles(labels: np.ndarray, min_circular_ratio: floa
             mask[coords[0, :], coords[1, :]] = 1 # Transpose the coordinates here
 
             # If the ratio is within the circularity thresholds, add the mask to the corresponding list
+
             if min_circular_ratio <= ratio <= max_circular_ratio:
                 circle_masks.append(mask)
             elif min_semi_ratio <= ratio <= max_semi_ratio:
                 semi_circle_masks.append(mask)
 
     return circle_masks, semi_circle_masks
-
-
 
 
 def merge_and_segment(semi_circles: List[np.ndarray], min_circular_ratio: float, max_circular_ratio: float) -> List[np.ndarray]:
@@ -208,7 +207,7 @@ def merge_and_segment(semi_circles: List[np.ndarray], min_circular_ratio: float,
 
     return masks
 
-def remove_duplicates(masks: List[np.ndarray], overlap_threshold: float = 0.8) -> List[np.ndarray]:
+def remove_duplicates(masks: List[np.ndarray], overlap_threshold: float = 0.3) -> List[np.ndarray]:
     """
     Removes duplicate masks based on the overlap threshold.
 
