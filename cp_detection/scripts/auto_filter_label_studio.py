@@ -6,7 +6,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from utils.image_utils import watershed, remove_small_objects, detect_circles_and_semi_circles, merge_and_segment, remove_duplicates
-from utils.json_utils import json2list, list2json, save_filtered_json
+from utils.json_utils import json2list, masks2rle, save_label_studio_task
 import glob
 import json
 
@@ -69,25 +69,23 @@ def auto_filter(json_input: str, min_circular_ratio: float = 0.9, max_circular_r
 
 
 counter = 0
-
-# Process each JSON file
 for i, json_file_path in tqdm(enumerate(json_files), total=len(json_files), file=sys.stdout):
-    # print(f"Processing file: {json_file_path}, {i+1} of {len(json_files)}.")  # Print the path of the current file
-
     # Open the JSON file and read the data
     with open(json_file_path, 'r') as json_file:
         json_data = json_file.read()
 
     # Apply the automated filter to the JSON data
-    # print("Applying filter...")  # Print a message before the filter is applied
     rles = auto_filter(json_data)
     if rles:
-        save_label_studio_task(rles, json_file_path, output_folder)
+        image_file_name = os.path.splitext(os.path.basename(json_file_path))[0] + '.jpg'
+        image_url = f"https://raw.githubusercontent.com/IsaacWhooo/segment-anything/main/cp_detection/test_data/{image_file_name}"
+
+        save_label_studio_task(rles, image_url, output_folder)
         print("Masks saved.")
-        return 1
+        counter += 1
+
     else:
         print("No mask found in this file.")
-        return 0
 
 print(f"Processed {total_file_number}. Saved {counter} files.")  # Print a message after all files have been processed
 

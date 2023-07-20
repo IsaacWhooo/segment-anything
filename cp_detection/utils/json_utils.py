@@ -112,28 +112,31 @@ def save_label_studio_task(rles, image_path, output_folder):
     output_folder: str
         The folder where the task will be saved.
     """
-    for i, rle in enumerate(rles):
-        task = {
-            'data': {'image': image_path},
-            'predictions': [
-                {
-                    'result': [
-                        {
-                            'from_name': 'tag',
-                            'to_name': 'image',
-                            'type': 'brushlabels',
-                            'value': {
-                                'brushlabels': ['cp'],
-                                'image_rotation': 0,
-                                'rle': rle
-                            }
-                        }
-                    ],
-                    'score': None,
-                    'model_version': None
-                }
-            ]
+    results = []
+    for rle in rles:
+        result = {
+            'from_name': 'tag',
+            'to_name': 'image',
+            'type': 'brushlabels',
+            'value': {
+                'brushlabels': ['cp'],
+                'image_rotation': 0,
+                'rle': rle
+            }
         }
-        task_file_name = os.path.join(output_folder, f'ls_{os.path.splitext(os.path.basename(image_path))[0]}_{i}.json')
-        with open(task_file_name, 'w') as f:
-            json.dump(task, f)
+        results.append(result)
+
+    task = {
+        'data': {'image': image_path},
+        'predictions': [
+            {
+                'result': results,
+                'score': None,
+                'model_version': None
+            }
+        ]
+    }
+
+    task_file_name = os.path.join(output_folder, f'ls_{os.path.splitext(os.path.basename(image_path))[0]}.json')
+    with open(task_file_name, 'w') as f:
+        json.dump(task, f)
