@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
+import cv2
 
 def show_mask(mask):
     plt.imshow(mask, cmap='binary')
@@ -53,3 +55,32 @@ def display_masks_on_image(image, masks):
 
     plt.axis('off')
     plt.show()
+
+def create_masked_image(image, masks):
+    # Convert the original image to RGB
+    image = image.convert('RGB')
+
+    # Convert the image to a numpy array
+    image_array = np.array(image)
+
+    # Create a new image array for the masks
+    mask_image_array = np.zeros(image_array.shape, dtype=np.uint8)
+
+    # For each mask
+    for mask in masks:
+        # Create a border around the mask
+        kernel = np.ones((5,5),np.uint8)
+        border = cv2.dilate(mask, kernel, iterations = 1) - mask
+
+        # Add the mask to the mask image array
+        mask_image_array[mask > 0] = [255, 0, 0]
+        mask_image_array[border > 0] = [255, 255, 255]  # Set the border color to white
+
+    # Create a PIL image from the mask image array
+    mask_image = Image.fromarray(mask_image_array)
+
+    # Composite the original image and the mask image
+    masked_image = Image.blend(image, mask_image, alpha=0.5)
+
+    return masked_image
+

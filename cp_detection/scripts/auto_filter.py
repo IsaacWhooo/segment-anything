@@ -5,7 +5,6 @@ from tqdm import tqdm
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from utils.image_utils import watershed, remove_small_objects, detect_circles_and_semi_circles, merge_and_segment, remove_duplicates
 from utils.json_utils import json2list, list2json, save_filtered_json
 import glob
 import json
