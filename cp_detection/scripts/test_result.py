@@ -14,7 +14,7 @@ image_name = filtered_json_name[9:-5]
 
 image_file_path = "../original_images/" + image_name + ".jpg"
 json_file_path = "../filtered_json/" + filtered_json_name
-original_json_file_path = "../input_json/" + image_name + ".json"
+original_json_file_path = "../data/input_json/" + image_name + ".json"
 
 with open(json_file_path, 'r') as json_file:
     json_data1 = json.load(json_file)

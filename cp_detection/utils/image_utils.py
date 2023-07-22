@@ -207,7 +207,7 @@ def merge_and_segment(semi_circles: List[np.ndarray], min_circular_ratio: float,
 
     return masks
 
-def remove_duplicates(masks: List[np.ndarray], overlap_threshold: float = 0.3) -> List[np.ndarray]:
+def remove_duplicates(masks: List[np.ndarray], overlap_threshold: float = 0.2) -> List[np.ndarray]:
     """
     Removes duplicate masks based on the overlap threshold.
 
