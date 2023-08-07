@@ -56,6 +56,13 @@ parser.add_argument(
 parser.add_argument("--device", type=str, default="cuda", help="The device to run generation on.")
 
 parser.add_argument(
+    "--min-area",
+    type=int,
+    default=5000,
+    help="Minimum area for a mask to be retained.",
+)
+
+parser.add_argument(
     "--convert-to-rle",
     action="store_true",
     help=(
@@ -150,6 +157,8 @@ amg_settings.add_argument(
 )
 
 
+
+
 def write_masks_to_folder(masks: List[Dict[str, Any]], path: str) -> None:
     header = "id,area,bbox_x0,bbox_y0,bbox_w,bbox_h,point_input_x,point_input_y,predicted_iou,stability_score,crop_box_x0,crop_box_y0,crop_box_w,crop_box_h"  # noqa
     metadata = [header]
@@ -221,8 +230,8 @@ def main(args: argparse.Namespace) -> None:
 
         masks = generator.generate(image)
 
-        #Only keep mask with area > 5000
-        masks = [mask for mask in masks if mask["area"] > 5000]
+        #Only keep mask with area > > args.min_area
+        masks = [mask for mask in masks if mask["area"] > > args.min_area]
 
         base = os.path.basename(t)
         base = os.path.splitext(base)[0]
